@@ -9,11 +9,19 @@
 
 ---
 
-## 🚀 Live Demo
+## 🚀 Try the Live Demo
 
-✨ **The app is live and running!** → [smart-habit-tracker-orpin.vercel.app](https://smart-habit-tracker-orpin.vercel.app)
+**Want to explore the app without registration?** Use our demo account!
 
-*Complete full-stack application with user authentication and real-time data persistence*
+| | |
+|---|---|
+| 🌐 **Live App** | [smart-habit-tracker-orpin.vercel.app](https://smart-habit-tracker-orpin.vercel.app) |
+| 📧 **Email** | `guest@demo.com` |
+| 🔑 **Password** | `GuestDemo2025!` |
+
+> 💡 **Tip:** Click the **"Try Demo Account"** button on the login page for instant access!
+
+*The demo account includes sample habits with completion history to showcase all features including statistics and progress tracking.*
 
 ---
 
