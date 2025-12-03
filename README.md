@@ -67,7 +67,7 @@
 - **Touch-friendly targets** (minimum 44x44px) for mobile interactions
 - **Consistent design system** with CSS custom properties
 - **Smooth animations** and GPU-accelerated transitions
-- **WCAG accessibility** with ARIA labels and keyboard navigation
+- **Accessibility features** including ARIA labels and keyboard navigation
 - **Optimized performance** with React.memo and lazy loading
 - **Form validation** with real-time error feedback
 - **Toast notifications** for user feedback
