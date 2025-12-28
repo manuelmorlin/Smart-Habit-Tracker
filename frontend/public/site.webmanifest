@@ -8,5 +8,13 @@
   "theme_color": "#667eea",
   "orientation": "portrait-primary",
   "categories": ["productivity", "utilities", "lifestyle"],
-  "lang": "it"
+  "lang": "it",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
