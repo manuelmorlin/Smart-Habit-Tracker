@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import HabitService from '../services/habitService';
+import FirebaseService from '../services/firebaseService';
 
 const StatsPanel = memo(({ habits }) => {
   const { currentUser } = useAuth();
@@ -74,10 +74,23 @@ const StatsPanel = memo(({ habits }) => {
       setLoading(true);
       setError(null);
       
-      const data = await HabitService.getStats(currentUser.id);
+      const data = await FirebaseService.getStats(currentUser.id);
       
       if (data.success) {
-        setWeeklyStats(data.data);
+        // Transform Firebase response to expected format
+        const weekRange = getWeekRange();
+        const transformedStats = {
+          habits: statsData.habits, // Use local habits data for detailed stats
+          summary: {
+            total_habits: data.data.total_habits || 0,
+            average_completion: data.data.average_completion || 0,
+            successful_habits: statsData.summary.successful_habits || 0,
+            current_streak: data.data.current_streak || 0,
+            best_streak: data.data.best_streak || 0,
+            ...weekRange
+          }
+        };
+        setWeeklyStats(transformedStats);
       } else {
         throw new Error(data.error || 'Failed to fetch stats');
       }
@@ -96,7 +109,7 @@ const StatsPanel = memo(({ habits }) => {
 
   // Memoized motivational message
   const motivationalMessage = useMemo(() => {
-    if (!weeklyStats) return null;
+    if (!weeklyStats || !weeklyStats.summary) return null;
     
     const { average_completion, total_habits } = weeklyStats.summary;
     
@@ -158,6 +171,16 @@ const StatsPanel = memo(({ habits }) => {
         <button onClick={fetchStats} className="retry-btn">
           Retry
         </button>
+      </div>
+    );
+  }
+
+  // Safety check for weeklyStats structure
+  if (!weeklyStats || !weeklyStats.summary || !weeklyStats.habits) {
+    return (
+      <div className="stats-loading">
+        <div className="spinner large"></div>
+        <p>Loading statistics...</p>
       </div>
     );
   }

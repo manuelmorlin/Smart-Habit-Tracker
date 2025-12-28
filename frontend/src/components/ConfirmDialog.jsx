@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function ConfirmDialog({ open, title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', onConfirm, onCancel, loading = false }) {
   const handleBackdrop = useCallback((e) => {
@@ -16,7 +17,7 @@ export default function ConfirmDialog({ open, title, message, confirmLabel = 'Co
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="confirm-overlay" role="dialog" aria-modal="true" onClick={handleBackdrop}>
       <div className="confirm-modal" role="document">
         <h3 className="confirm-title">{title}</h3>
@@ -30,6 +31,7 @@ export default function ConfirmDialog({ open, title, message, confirmLabel = 'Co
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

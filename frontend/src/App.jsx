@@ -3,11 +3,15 @@ import Dashboard from './pages/Dashboard';
 import AuthPage from './pages/AuthPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
-import HabitService from './services/habitService';
+import FirebaseService from './services/firebaseService';
+import { seedDemoData } from './utils/seedDemoData';
 import './styles/App.css';
 import './styles/Auth.css';
 import './styles/UserProfile.css';
 import ConfirmDialog from './components/ConfirmDialog';
+
+// Esponi seedDemoData globalmente per la console
+window.seedDemoData = seedDemoData;
 
 function App() {
   const { currentUser, logout } = useAuth();
@@ -30,7 +34,7 @@ function App() {
 
     try {
       setLoading(true);
-      const data = await HabitService.getHabits(currentUser.id);
+      const data = await FirebaseService.getHabits(currentUser.id);
       
       if (data.success) {
         setHabits(data.data);
@@ -82,7 +86,7 @@ function App() {
       );
 
       // Call the API
-      await HabitService.toggleHabit(currentUser.id, habitId);
+      await FirebaseService.toggleHabit(currentUser.id, habitId);
       
       // Optionally refresh habits from server
       // fetchHabits();
@@ -98,7 +102,7 @@ function App() {
     if (!currentUser) return;
 
     try {
-      const data = await HabitService.createHabit(currentUser.id, habitData);
+      const data = await FirebaseService.createHabit(currentUser.id, habitData);
       
       if (data.success) {
         // Add the new habit to the state
@@ -125,7 +129,7 @@ function App() {
     if (!currentUser) return;
     
     try {
-      const data = await HabitService.updateHabit(currentUser.id, habitId, habitData);
+      const data = await FirebaseService.updateHabit(currentUser.id, habitId, habitData);
       
       if (data.success && data.habit) {
         // Update local state with the updated habit
@@ -152,7 +156,7 @@ function App() {
     if (!currentUser || !pendingHabit) return;
     try {
       setDeletingOne(true);
-      await HabitService.deleteHabit(currentUser.id, pendingHabit.id);
+      await FirebaseService.deleteHabit(currentUser.id, pendingHabit.id);
       setHabits(prev => prev.filter(h => h.id !== pendingHabit.id));
       addToast(`Habit "${pendingHabit.name ?? ''}" deleted`, { type: 'success' });
     } catch (error) {
@@ -184,7 +188,7 @@ function App() {
         week_checks: 0,
         week_completion: 0
       })));
-      await HabitService.resetProgress(currentUser.id);
+      await FirebaseService.resetProgress(currentUser.id);
       await fetchHabits();
       addToast('Progress reset successfully', { type: 'success' });
     } catch (error) {
@@ -207,7 +211,7 @@ function App() {
     try {
       setDeletingAll(true);
       setHabits([]);
-      await HabitService.deleteAllHabits(currentUser.id);
+      await FirebaseService.deleteAllHabits(currentUser.id);
       await fetchHabits();
       addToast('All habits have been deleted', { type: 'success' });
     } catch (error) {

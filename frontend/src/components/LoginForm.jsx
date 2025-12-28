@@ -3,8 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 
 // Demo account credentials
 const DEMO_CREDENTIALS = {
-  email: 'guest@demo.com',
-  password: 'GuestDemo2025!'
+  email: 'demo@example.com',
+  password: 'password'
 };
 
 const LoginForm = ({ onSwitchToRegister }) => {

@@ -2051,20 +2051,77 @@ body.dark-mode .empty-icon {
 }
 
 /* Stats Panel */
+.stats-panel {
+  padding: 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.stats-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16);
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+.stats-loading .spinner.large {
+  width: 40px;
+  height: 40px;
+  border-width: 3px;
+  margin-bottom: var(--space-4);
+}
+
+.stats-error {
+  text-align: center;
+  padding: var(--space-12);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+.stats-error h3 {
+  color: var(--danger-color);
+  margin-bottom: var(--space-2);
+}
+
+.stats-error p {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+
+.retry-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--transition-base);
+}
+
+.retry-btn:hover {
+  background: var(--primary-dark);
+}
+
 .stats-header {
   text-align: center;
   margin-bottom: var(--space-8);
 }
 
 .stats-header h2 {
-  color: var(--gray-900);
+  color: var(--text-primary);
   margin-bottom: var(--space-2);
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
 }
 
 .date-range {
-  color: var(--gray-600);
+  color: var(--text-secondary);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
 }
@@ -2077,17 +2134,17 @@ body.dark-mode .empty-icon {
 }
 
 .summary-card {
-  background: white;
+  background: var(--card-bg);
   padding: var(--space-6);
   border-radius: var(--radius-lg);
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--border-color);
   transition: all 0.2s ease;
 }
 
 .summary-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  border-color: var(--gray-300);
+  border-color: var(--border-hover);
 }
 
 .summary-card.habits-count {
@@ -2105,19 +2162,19 @@ body.dark-mode .empty-icon {
 .card-content h3 {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
-  color: var(--gray-900);
+  color: var(--text-primary);
   margin-bottom: var(--space-1);
 }
 
 .card-content p {
-  color: var(--gray-600);
+  color: var(--text-secondary);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
 }
 
 /* Habits Stats */
 .habits-stats h3 {
-  color: var(--gray-900);
+  color: var(--text-primary);
   margin-bottom: var(--space-5);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
@@ -2130,15 +2187,15 @@ body.dark-mode .empty-icon {
 }
 
 .stat-item {
-  background: white;
+  background: var(--card-bg);
   padding: var(--space-5);
   border-radius: var(--radius-lg);
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--border-color);
   transition: all 0.2s ease;
 }
 
 .stat-item:hover {
-  border-color: var(--gray-300);
+  border-color: var(--border-hover);
   box-shadow: var(--shadow-md);
 }
 
@@ -2164,7 +2221,7 @@ body.dark-mode .empty-icon {
 
 .stat-name {
   font-weight: var(--font-weight-semibold);
-  color: var(--gray-900);
+  color: var(--text-primary);
   font-size: var(--font-size-base);
 }
 
@@ -2205,7 +2262,7 @@ body.dark-mode .empty-icon {
 }
 
 .stat-details {
-  color: var(--gray-600);
+  color: var(--text-secondary);
   font-size: var(--font-size-sm);
   display: flex;
   align-items: center;
@@ -2213,7 +2270,25 @@ body.dark-mode .empty-icon {
 }
 
 .frequency-info {
-  color: var(--gray-500);
+  color: var(--text-tertiary);
+}
+
+/* Empty stats state */
+.empty-stats {
+  text-align: center;
+  padding: var(--space-12);
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+.empty-stats .empty-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto var(--space-4);
+  background: var(--gray-100);
+  border-radius: 50%;
 }
 
 /* Motivational Messages */

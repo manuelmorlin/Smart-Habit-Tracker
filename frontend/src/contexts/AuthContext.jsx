@@ -1,120 +1,54 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { auth } from '../config/firebase';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile
+} from 'firebase/auth';
+import FirebaseService from '../services/firebaseService';
 
 // Create authentication context
 const AuthContext = createContext(null);
-
-// API base URL - adjust this based on your backend setup
-// In production, Vercel redirects /api/* to the public server
-const API_BASE_URL = '/api';
-
-// Function to authenticate user via backend API
-const authenticate = async (email, password) => {
-  try {
-    console.log('Attempting to authenticate user with URL:', `${API_BASE_URL}/auth/login.php`);
-    const response = await fetch(`${API_BASE_URL}/auth/login.php`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password })
-    });
-    
-    const result = await response.json();
-    
-    if (response.ok && result.success) {
-      return {
-        success: true,
-        user: result.user,
-        token: result.token
-      };
-    } else {
-      return {
-        success: false,
-        message: result.error || 'Login failed'
-      };
-    }
-  } catch (error) {
-    console.error('Login error:', error);
-    // Check if it's a network error
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      return {
-        success: false,
-        message: 'Cannot connect to server. Please make sure the backend is running on http://localhost:8000'
-      };
-    }
-    return {
-      success: false,
-      message: 'Network error. Please check your connection.'
-    };
-  }
-};
-
-// Function to register user via backend API
-const registerUser = async (name, email, password, bio = '', goals = '') => {
-  try {
-    console.log('Attempting to register user with URL:', `${API_BASE_URL}/auth/register.php`);
-    const response = await fetch(`${API_BASE_URL}/auth/register.php`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name, email, password, bio, goals })
-    });
-    
-    const result = await response.json();
-    
-    if (response.ok && result.success) {
-      return {
-        success: true,
-        user: result.user
-      };
-    } else {
-      return {
-        success: false,
-        message: result.error || 'Registration failed'
-      };
-    }
-  } catch (error) {
-    console.error('Registration error:', error);
-    // Check if it's a network error
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      return {
-        success: false,
-        message: 'Cannot connect to server. Please make sure the backend is running on http://localhost:8000'
-      };
-    }
-    return {
-      success: false,
-      message: 'Network error. Please check your connection.'
-    };
-  }
-};
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Check if there's a saved user on load
+  // Listen to Firebase auth state changes
   useEffect(() => {
-    const checkLoggedIn = () => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
-        const userData = localStorage.getItem('smartHabitUser');
-        const userToken = localStorage.getItem('smartHabitToken');
-        if (userData && userToken) {
-          setCurrentUser(JSON.parse(userData));
+        if (firebaseUser) {
+          // Get additional user data from Firestore
+          const profileResult = await FirebaseService.getUserProfile(firebaseUser.uid);
+          
+          const userData = {
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: profileResult.success ? profileResult.user.name : firebaseUser.displayName || '',
+            bio: profileResult.success ? profileResult.user.bio : '',
+            goals: profileResult.success ? profileResult.user.goals : '',
+            createdAt: profileResult.success ? profileResult.user.createdAt : null
+          };
+          
+          setCurrentUser(userData);
+          localStorage.setItem('smartHabitUser', JSON.stringify(userData));
+        } else {
+          setCurrentUser(null);
+          localStorage.removeItem('smartHabitUser');
+          localStorage.removeItem('smartHabitToken');
         }
       } catch (err) {
-        console.error('Error retrieving user data:', err);
-        // Clean storage in case of error
-        localStorage.removeItem('smartHabitUser');
-        localStorage.removeItem('smartHabitToken');
+        console.error('Error in auth state change:', err);
       } finally {
         setLoading(false);
       }
-    };
-    
-    checkLoggedIn();
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // Login function
@@ -123,20 +57,47 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      const result = await authenticate(email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
       
-      if (result.success) {
-        setCurrentUser(result.user);
-        localStorage.setItem('smartHabitUser', JSON.stringify(result.user));
-        localStorage.setItem('smartHabitToken', result.token);
-        return { success: true };
-      } else {
-        setError(result.message);
-        return { success: false, message: result.message };
-      }
+      // Get additional user data from Firestore
+      const profileResult = await FirebaseService.getUserProfile(firebaseUser.uid);
+      
+      const userData = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: profileResult.success ? profileResult.user.name : firebaseUser.displayName || '',
+        bio: profileResult.success ? profileResult.user.bio : '',
+        goals: profileResult.success ? profileResult.user.goals : ''
+      };
+      
+      setCurrentUser(userData);
+      localStorage.setItem('smartHabitUser', JSON.stringify(userData));
+      
+      return { success: true };
     } catch (err) {
       console.error('Error during login:', err);
-      const errorMsg = 'An error occurred during login. Please try again later.';
+      let errorMsg = 'An error occurred during login. Please try again later.';
+      
+      // Handle Firebase auth errors
+      switch (err.code) {
+        case 'auth/user-not-found':
+          errorMsg = 'No account found with this email. Please register first.';
+          break;
+        case 'auth/wrong-password':
+          errorMsg = 'Incorrect password. Check your credentials and try again.';
+          break;
+        case 'auth/invalid-email':
+          errorMsg = 'Please enter a valid email address.';
+          break;
+        case 'auth/too-many-requests':
+          errorMsg = 'Too many failed attempts. Please try again later.';
+          break;
+        case 'auth/invalid-credential':
+          errorMsg = 'Invalid credentials. Please check your email and password.';
+          break;
+      }
+      
       setError(errorMsg);
       return { success: false, message: errorMsg };
     } finally {
@@ -150,7 +111,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      // Basic validation (additional to backend validation)
+      // Basic validation
       if (!name || name.length < 2) {
         setError('Name must contain at least 2 characters');
         return { success: false, message: 'Name must contain at least 2 characters' };
@@ -166,21 +127,50 @@ export const AuthProvider = ({ children }) => {
         return { success: false, message: 'Password must contain at least 6 characters' };
       }
       
-      const result = await registerUser(name, email, password);
+      // Create Firebase Auth user
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
       
-      if (result.success) {
-        setCurrentUser(result.user);
-        localStorage.setItem('smartHabitUser', JSON.stringify(result.user));
-        // Note: For registration, we'll need to auto-login or redirect to login
-        return { success: true };
-      } else {
-        setError(result.message);
-        return { success: false, message: result.message };
-      }
+      // Update display name in Firebase Auth
+      await updateProfile(firebaseUser, { displayName: name });
       
+      // Create user profile in Firestore
+      await FirebaseService.createUserProfile(firebaseUser.uid, {
+        name,
+        email,
+        bio: '',
+        goals: ''
+      });
+      
+      const userData = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: name,
+        bio: '',
+        goals: ''
+      };
+      
+      setCurrentUser(userData);
+      localStorage.setItem('smartHabitUser', JSON.stringify(userData));
+      
+      return { success: true };
     } catch (err) {
       console.error('Error during registration:', err);
-      const errorMsg = 'An error occurred during registration. Please try again later.';
+      let errorMsg = 'An error occurred during registration. Please try again later.';
+      
+      // Handle Firebase auth errors
+      switch (err.code) {
+        case 'auth/email-already-in-use':
+          errorMsg = 'An account with this email already exists.';
+          break;
+        case 'auth/invalid-email':
+          errorMsg = 'Please enter a valid email address.';
+          break;
+        case 'auth/weak-password':
+          errorMsg = 'Password is too weak. Please use at least 6 characters.';
+          break;
+      }
+      
       setError(errorMsg);
       return { success: false, message: errorMsg };
     } finally {
@@ -189,30 +179,29 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Function to update user profile
-  const updateProfile = useCallback(async (updatedData) => {
-    // Do not flip global loading when updating profile to avoid remounts
+  const updateUserProfile = useCallback(async (updatedData) => {
     setError(null);
     try {
       if (!currentUser) {
         throw new Error('No user logged in');
       }
       
-      const response = await fetch(`${API_BASE_URL}/auth/profile.php`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: currentUser.id,
+      // Update profile in Firestore
+      const result = await FirebaseService.updateUserProfile(currentUser.id, updatedData);
+      
+      if (result.success) {
+        const updatedUser = {
+          ...currentUser,
           ...updatedData
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        setCurrentUser(result.user);
-        localStorage.setItem('smartHabitUser', JSON.stringify(result.user));
+        };
+        setCurrentUser(updatedUser);
+        localStorage.setItem('smartHabitUser', JSON.stringify(updatedUser));
+        
+        // Update display name in Firebase Auth if name changed
+        if (updatedData.name && auth.currentUser) {
+          await updateProfile(auth.currentUser, { displayName: updatedData.name });
+        }
+        
         return { success: true };
       } else {
         setError(result.error || 'Profile update failed');
@@ -227,10 +216,15 @@ export const AuthProvider = ({ children }) => {
   }, [currentUser]);
 
   // Logout function
-  const logout = useCallback(() => {
-    setCurrentUser(null);
-    localStorage.removeItem('smartHabitUser');
-    localStorage.removeItem('smartHabitToken');
+  const logout = useCallback(async () => {
+    try {
+      await signOut(auth);
+      setCurrentUser(null);
+      localStorage.removeItem('smartHabitUser');
+      localStorage.removeItem('smartHabitToken');
+    } catch (err) {
+      console.error('Error during logout:', err);
+    }
   }, []);
 
   const value = {
@@ -240,7 +234,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    updateProfile
+    updateProfile: updateUserProfile
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
